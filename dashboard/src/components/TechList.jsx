@@ -1,15 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 
 export default function TechList({ data, sector, onBack, onSelect }) {
-  const [search, setSearch] = useState('')
   const key = sector.type === 'growth' ? 'growth_tech' : 'strategic_tech'
   const rows = data[key]
 
   const techs = useMemo(() => {
-    return rows
-      .filter((r) => r.current && r.status !== '삭제' && r.sector_key === sector.key.split('::')[1])
-      .filter((r) => !search || r.tech_name?.toLowerCase().includes(search.toLowerCase()))
-  }, [rows, sector, search])
+    return rows.filter(
+      (r) => r.current && r.status !== '삭제' && r.sector_key === sector.key.split('::')[1]
+    )
+  }, [rows, sector])
 
   const groups = useMemo(() => {
     if (sector.type !== 'growth') return null
@@ -34,13 +33,6 @@ export default function TechList({ data, sector, onBack, onSelect }) {
           <span className="drill-count">{techs.length}건</span>
         </div>
       </div>
-
-      <input
-        className="search-input drill-search"
-        placeholder="기술명 검색…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
 
       <div className="tech-list">
         {groups ? (
@@ -73,7 +65,7 @@ export default function TechList({ data, sector, onBack, onSelect }) {
             </button>
           ))
         )}
-        {techs.length === 0 && <div className="empty-msg">검색 결과가 없습니다.</div>}
+        {techs.length === 0 && <div className="empty-msg">현행 기술이 없습니다.</div>}
       </div>
     </div>
   )

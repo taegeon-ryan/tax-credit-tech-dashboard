@@ -45,7 +45,7 @@ export default function App() {
     setSearch('')
   }
 
-  const kpis = useMemo(() => {
+  const statusCounts = useMemo(() => {
     if (!data) return null
     const active = (rows) => rows.filter((r) => r.current && r.status !== '삭제')
     return {
@@ -59,14 +59,14 @@ export default function App() {
       <header className="app-header">
         <div className="header-inner">
           <h1 className="app-title">조세특례제한법 첨단기술 현황판</h1>
-          {kpis && (
+          {statusCounts && (
             <div className="header-stats">
               <div className="hstat">
-                <span className="hstat-num hstat-num--strategic">{kpis.strategicTech}</span>
+                <span className="hstat-num hstat-num--strategic">{statusCounts.strategicTech}</span>
                 <span className="hstat-label">국가전략기술</span>
               </div>
               <div className="hstat">
-                <span className="hstat-num hstat-num--growth">{kpis.growthTech}</span>
+                <span className="hstat-num hstat-num--growth">{statusCounts.growthTech}</span>
                 <span className="hstat-label">신성장·원천기술</span>
               </div>
             </div>

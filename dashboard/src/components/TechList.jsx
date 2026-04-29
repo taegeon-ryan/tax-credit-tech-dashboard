@@ -12,13 +12,23 @@ export default function TechList({ data, sector, onBack, onSelect }) {
 
   const groups = useMemo(() => {
     if (sector.type !== 'growth') return null
+    // 같은 prefix(가./나./...)는 한 그룹으로 합치고, 가장 최신 apply_date의 표기를 대표 이름으로 사용
     const map = new Map()
     for (const t of techs) {
       const sub = t.subsector || ''
-      if (!map.has(sub)) map.set(sub, [])
-      map.get(sub).push(t)
+      const prefix = (sub.match(/^([가-힣])\./) || [, sub])[1]
+      const date = t.apply_date || ''
+      if (!map.has(prefix)) {
+        map.set(prefix, { label: sub, labelDate: date, items: [t] })
+      } else {
+        const g = map.get(prefix)
+        g.items.push(t)
+        if (date > g.labelDate) { g.label = sub; g.labelDate = date }
+      }
     }
     return Array.from(map.entries())
+      .sort(([a], [b]) => a.localeCompare(b, 'ko'))
+      .map(([, g]) => [g.label, g.items])
   }, [techs, sector.type])
 
   return (

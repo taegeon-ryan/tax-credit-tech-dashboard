@@ -67,11 +67,19 @@ button { font-family: inherit; }
 }
 
 .app-title {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
   font-size: 24px;
   font-weight: 600;
   letter-spacing: -0.75px;
   color: #fff;
+  transition: opacity 0.15s;
 }
+.app-title:hover { opacity: 0.85; }
 
 .header-stats {
   display: flex;
@@ -85,7 +93,14 @@ button { font-family: inherit; }
   flex-direction: row;
   align-items: baseline;
   gap: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
 }
+.hstat:hover { opacity: 0.8; }
 
 .hstat-num {
   font-size: 24px;

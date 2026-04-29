@@ -45,6 +45,14 @@ export default function App() {
     setSearch('')
   }
 
+  const goToCardView = (targetFilter) => {
+    setView('card')
+    setFilter(targetFilter)
+    setSelectedSector(null)
+    setSelectedTech(null)
+    setSearch('')
+  }
+
   const statusCounts = useMemo(() => {
     if (!data) return null
     const active = (rows) => rows.filter((r) => r.current && r.status !== '삭제')
@@ -58,17 +66,29 @@ export default function App() {
     <div className="app">
       <header className="app-header">
         <div className="header-inner">
-          <h1 className="app-title">조세특례제한법 첨단기술 현황판</h1>
+          <button
+            type="button"
+            className="app-title"
+            onClick={() => goToCardView('strategic')}
+          >조세특례제한법 첨단기술 현황판</button>
           {statusCounts && (
             <div className="header-stats">
-              <div className="hstat">
+              <button
+                type="button"
+                className="hstat"
+                onClick={() => goToCardView('strategic')}
+              >
                 <span className="hstat-num hstat-num--strategic">{statusCounts.strategicTech}</span>
                 <span className="hstat-label">국가전략기술</span>
-              </div>
-              <div className="hstat">
+              </button>
+              <button
+                type="button"
+                className="hstat"
+                onClick={() => goToCardView('growth')}
+              >
                 <span className="hstat-num hstat-num--growth">{statusCounts.growthTech}</span>
                 <span className="hstat-label">신성장·원천기술</span>
-              </div>
+              </button>
             </div>
           )}
         </div>

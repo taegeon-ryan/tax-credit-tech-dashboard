@@ -59,8 +59,6 @@ button { font-family: inherit; }
 }
 
 .header-inner {
-  max-width: 1400px;
-  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -112,8 +110,6 @@ button { font-family: inherit; }
   padding: 14px 32px;
 }
 .search-bar-inner {
-  max-width: 1400px;
-  margin: 0 auto;
   position: relative;
 }
 .global-search {
@@ -309,9 +305,7 @@ button { font-family: inherit; }
 .main-content {
   flex: 1;
   padding: 28px 32px;
-  max-width: 1400px;
   width: 100%;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -478,23 +472,6 @@ button { font-family: inherit; }
   font-size: 13px;
   margin-left: 4px;
 }
-
-.drill-search {
-  margin-bottom: 12px;
-  width: 100%;
-  max-width: 360px;
-}
-
-.search-input {
-  padding: 9px 13px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  outline: none;
-  background: var(--surface);
-  transition: border-color 0.15s;
-}
-.search-input:focus { border-color: var(--text); }
 
 /* ── Tech list ── */
 .tech-list {

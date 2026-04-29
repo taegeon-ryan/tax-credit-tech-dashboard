@@ -1,25 +1,34 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 
 export default function TechList({ data, sector, onBack, onSelect }) {
-  const [search, setSearch] = useState('')
   const key = sector.type === 'growth' ? 'growth_tech' : 'strategic_tech'
   const rows = data[key]
 
   const techs = useMemo(() => {
-    return rows
-      .filter((r) => r.current && r.status !== '삭제' && r.sector_key === sector.key.split('::')[1])
-      .filter((r) => !search || r.tech_name?.toLowerCase().includes(search.toLowerCase()))
-  }, [rows, sector, search])
+    return rows.filter(
+      (r) => r.current && r.status !== '삭제' && r.sector_key === sector.key.split('::')[1]
+    )
+  }, [rows, sector])
 
   const groups = useMemo(() => {
     if (sector.type !== 'growth') return null
+    // 같은 prefix(가./나./...)는 한 그룹으로 합치고, 가장 최신 apply_date의 표기를 대표 이름으로 사용
     const map = new Map()
     for (const t of techs) {
       const sub = t.subsector || ''
-      if (!map.has(sub)) map.set(sub, [])
-      map.get(sub).push(t)
+      const prefix = (sub.match(/^([가-힣])\./) || [, sub])[1]
+      const date = t.apply_date || ''
+      if (!map.has(prefix)) {
+        map.set(prefix, { label: sub, labelDate: date, items: [t] })
+      } else {
+        const g = map.get(prefix)
+        g.items.push(t)
+        if (date > g.labelDate) { g.label = sub; g.labelDate = date }
+      }
     }
     return Array.from(map.entries())
+      .sort(([a], [b]) => a.localeCompare(b, 'ko'))
+      .map(([, g]) => [g.label, g.items])
   }, [techs, sector.type])
 
   return (
@@ -34,13 +43,6 @@ export default function TechList({ data, sector, onBack, onSelect }) {
           <span className="drill-count">{techs.length}건</span>
         </div>
       </div>
-
-      <input
-        className="search-input drill-search"
-        placeholder="기술명 검색…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
 
       <div className="tech-list">
         {groups ? (
@@ -73,7 +75,7 @@ export default function TechList({ data, sector, onBack, onSelect }) {
             </button>
           ))
         )}
-        {techs.length === 0 && <div className="empty-msg">검색 결과가 없습니다.</div>}
+        {techs.length === 0 && <div className="empty-msg">현행 기술이 없습니다.</div>}
       </div>
     </div>
   )

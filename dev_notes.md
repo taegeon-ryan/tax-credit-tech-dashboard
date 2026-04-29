@@ -80,6 +80,31 @@
 
 ---
 
+## 2026-04-29
+
+**지시사항**: 프로젝트 폴더명 정리 후 GitHub 푸시 및 Vercel 배포.
+
+### Git 초기화 및 GitHub 푸시
+- 프로젝트 루트 `.gitignore` 작성 — Python(`__pycache__`, `.venv`), Node(`node_modules`, `dist`), macOS(`.DS_Store`), Office 임시 파일(`~$*`), Claude 로컬 설정(`.claude/settings.local.json`) 제외. `dashboard/.gitignore`는 Vite 기본 그대로 유지(이중 안전망).
+- `git init` → `git add .` → 첫 커밋 → `taegeon-ryan/tax-credit-tech-dashboard` 원격 연결 → `git push -u origin main`.
+- **문제**: GitHub 레포 생성 시 README 옵션이 체크되어 원격에 자동 커밋이 생긴 상태였음 → 첫 push에서 `non-fast-forward` 거부.
+- **해결**: `git pull origin main --allow-unrelated-histories --no-rebase --no-edit`로 무관 히스토리 병합 후 재푸시. (`--no-rebase`는 git 2.27+ 에서 divergent branches 시 명시 필요)
+
+### Vercel 배포 설정
+- **Root Directory**: `dashboard` (Vite 앱이 서브폴더에 있어 반드시 지정 필요)
+- **Framework Preset**: `Vite` 자동 감지 실패 → 수동 선택. 원인 추정: 레포 루트에 `package.json`이 없어(Python 파서가 루트) Vercel 감지기가 첫 패스에서 실패.
+- Build Command / Output Directory: 기본값(`vite build` / `dist`) 사용. CSV는 `dashboard/public/data/`에 있어 빌드 후 `/data/*.csv`로 자동 서빙.
+- 이후 `main` 브랜치 push 시 자동 재배포되도록 GitHub 연동.
+
+### 사이트 제목 및 파비콘 정리
+- 로컬 `dashboard/index.html`의 브라우저 탭 제목이 배포판과 달리 `조세특례제한법 기술현황 대시보드`로 남아 있어 `조세특례제한법 첨단기술 현황판`으로 통일.
+- 기본 Vite 파비콘을 제거하고 `dashboard/public/favicon.svg`를 초록색 PCB 기판 위 반도체 칩 형태의 SVG 아이콘으로 교체.
+- 더 이상 참조되지 않는 `dashboard/public/icons.svg` 삭제.
+- 로컬 작업 파일인 `.claude/`, `AGENTS.md`가 추적되지 않도록 `.gitignore`에 추가.
+- 인앱 브라우저에서 `/favicon.svg` 참조 및 페이지 제목을 확인하고, `npm run build`로 프로덕션 빌드 검증.
+
+---
+
 ## 향후 개발 계획
 
 - [ ] 법령 개정 시 자동 재파싱 및 버전별 diff 리포트 (신규/삭제/변경 기술 추적)

@@ -8,12 +8,21 @@ const FILES = {
   strategic_facility: '/data/strategic_facility.csv',
 }
 
+function computeElapsedMonths(applyDate) {
+  if (!applyDate) return null
+  const d = new Date(applyDate)
+  const now = new Date()
+  return (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth())
+}
+
 function normalize(row) {
+  const ad = row.apply_date ? String(row.apply_date) : ''
   return {
     ...row,
     current: row.current === 'True',
-    apply_date: row.apply_date ? String(row.apply_date) : '',
-    year: row.apply_date ? String(row.apply_date).slice(0, 4) : '',
+    apply_date: ad,
+    elapsed_months: computeElapsedMonths(ad),
+    year: ad ? ad.slice(0, 4) : '',
     sector_key: normalizeSector(row.sector_name),
   }
 }

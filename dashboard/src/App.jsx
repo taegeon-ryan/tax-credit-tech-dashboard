@@ -53,6 +53,12 @@ export default function App() {
     setSearch('')
   }
 
+  const handleSectorSelect = (sector) => {
+    setSelectedSector(sector)
+    setSelectedTech(null)
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
+  }
+
   const statusCounts = useMemo(() => {
     if (!data) return null
     const active = (rows) => rows.filter((r) => r.current && r.status !== '삭제')
@@ -141,7 +147,7 @@ export default function App() {
           <SectorCards
             data={data}
             filter={filter}
-            onSelect={(s) => { setSelectedSector(s); setSelectedTech(null) }}
+            onSelect={handleSectorSelect}
           />
         )}
 

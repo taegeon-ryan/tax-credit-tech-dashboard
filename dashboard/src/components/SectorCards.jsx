@@ -38,9 +38,15 @@ function aggregateSectors(data) {
           sectorNumber: parseInt(r.sector_number, 10) || 999,
           techCount: 0,
           facilityCount: 0,
+          firstApplyDate: r.first_apply_date || r.apply_date || '',
         })
       }
-      map.get(key).techCount++
+      const sector = map.get(key)
+      sector.techCount++
+      const firstDate = r.first_apply_date || r.apply_date || ''
+      if (firstDate && (!sector.firstApplyDate || firstDate < sector.firstApplyDate)) {
+        sector.firstApplyDate = firstDate
+      }
     }
   }
 
@@ -84,8 +90,11 @@ export default function SectorCards({ data, filter, onSelect }) {
         >
           <div className="sector-card-top">
             <span className="sector-icon">{sectorIcon(s.sectorKey)}</span>
-            <span className={`dataset-tag dataset-tag--${s.type}`}>
-              {s.type === 'growth' ? '신성장' : '전략'}
+            <span className="sector-card-meta">
+              <span className={`dataset-tag dataset-tag--${s.type}`}>
+                {s.type === 'growth' ? '신성장' : '전략'}
+              </span>
+              {s.firstApplyDate && <span className="sector-year">{s.firstApplyDate.slice(0, 4)}</span>}
             </span>
           </div>
           <div className="sector-card-body">

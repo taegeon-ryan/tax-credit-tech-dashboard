@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useAllData } from './hooks/useAllData'
 import SectorCards from './components/SectorCards'
 import TechList from './components/TechList'
@@ -39,6 +39,12 @@ export default function App() {
 
   const isSearching = search.trim().length > 0
 
+  useEffect(() => {
+    if (selectedTech) {
+      requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }))
+    }
+  }, [selectedTech])
+
   const handleSearchSelect = (tech, type) => {
     setSelectedSector({
       key: `${type}::${tech.sector_key}`,
@@ -51,6 +57,10 @@ export default function App() {
     setTechListControls(DEFAULT_TECH_LIST_CONTROLS)
     setView('card')
     setSearch('')
+  }
+
+  const handleRelatedTechSelect = (tech, type) => {
+    handleSearchSelect(tech, type)
   }
 
   const goToCardView = (targetFilter) => {
@@ -67,6 +77,11 @@ export default function App() {
     setSelectedTech(null)
     setTechListControls(DEFAULT_TECH_LIST_CONTROLS)
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
+  }
+
+  const handleRelatedSectorSelect = (sector) => {
+    setFilter(sector.type)
+    handleSectorSelect(sector)
   }
 
   const handleSectorBack = () => {
@@ -179,6 +194,7 @@ export default function App() {
             onControlsChange={handleTechListControlsChange}
             onBack={handleSectorBack}
             onSelect={(t) => setSelectedTech(t)}
+            onRelatedSectorSelect={handleRelatedSectorSelect}
           />
         )}
 
@@ -188,6 +204,7 @@ export default function App() {
             tech={selectedTech}
             sector={selectedSector}
             onBack={() => setSelectedTech(null)}
+            onRelatedTechSelect={handleRelatedTechSelect}
           />
         )}
 

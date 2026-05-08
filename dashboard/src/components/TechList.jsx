@@ -1,4 +1,6 @@
 import { useMemo } from 'react'
+import { getRelatedSectors } from '../utils/crossCategoryMap'
+import { sectorIcon } from '../utils/sectorIcons'
 
 const AGE_FILTERS = [
   { value: 'all', label: '전체', minMonths: 0 },
@@ -11,6 +13,26 @@ const SORT_OPTIONS = [
   { value: 'introduced', label: '도입일 순' },
   { value: 'name', label: '가나다 순' },
 ]
+
+function datasetFullLabel(type) {
+  return type === 'growth' ? '신성장' : '전략'
+}
+
+function collectSectors(rows) {
+  const map = new Map()
+  for (const row of rows) {
+    if (!row.current || row.status === '삭제') continue
+    if (!map.has(row.sector_key)) {
+      map.set(row.sector_key, {
+        key: row.sector_key,
+        name: row.sector_name,
+        sectorKey: row.sector_key,
+        sectorNumber: parseInt(row.sector_number, 10) || 999,
+      })
+    }
+  }
+  return map
+}
 
 function compareStatuteOrder(a, b) {
   const sectorDiff = (parseInt(a.sector_number, 10) || 999) - (parseInt(b.sector_number, 10) || 999)
@@ -49,10 +71,11 @@ function ageTag(row) {
   return { label, level: 'recent' }
 }
 
-export default function TechList({ data, sector, controls, onControlsChange, onBack, onSelect }) {
+export default function TechList({ data, sector, controls, onControlsChange, onBack, onSelect, onRelatedSectorSelect }) {
   const { ageFilter, includeDeleted, sortBy } = controls
   const key = sector.type === 'growth' ? 'growth_tech' : 'strategic_tech'
   const rows = data[key]
+  const relatedType = sector.type === 'growth' ? 'strategic' : 'growth'
 
   const filteredRows = useMemo(() => {
     const targetSectorKey = sector.key.split('::')[1]
@@ -104,6 +127,20 @@ export default function TechList({ data, sector, controls, onControlsChange, onB
       .map(([, g]) => [g.label, g.items])
   }, [techs, sector.type, sortBy])
 
+  const relatedSectors = useMemo(() => {
+    const relatedRows = relatedType === 'growth' ? data.growth_tech : data.strategic_tech
+    const sectorMap = collectSectors(relatedRows)
+    return getRelatedSectors(sector.sectorKey, sector.type)
+      .map((sectorKey) => sectorMap.get(sectorKey))
+      .filter(Boolean)
+      .map((related) => ({
+        ...related,
+        key: `${relatedType}::${related.sectorKey}`,
+        type: relatedType,
+      }))
+      .sort((a, b) => a.sectorNumber - b.sectorNumber)
+  }, [data, relatedType, sector.sectorKey, sector.type])
+
   const renderTech = (t, i) => {
     const tag = ageTag(t)
     const deleted = t.status === '삭제'
@@ -134,13 +171,37 @@ export default function TechList({ data, sector, controls, onControlsChange, onB
         <button className="back-btn" onClick={onBack}>← 분야 목록</button>
         <div className="drill-title-wrap">
           <span className={`dataset-tag dataset-tag--${sector.type}`}>
-            {sector.type === 'growth' ? '신성장·원천' : '국가전략'}
+            {sector.type === 'growth' ? '신성장' : '전략'}
           </span>
-          <h2 className="drill-title">{sector.name}</h2>
+          <h2 className="drill-title drill-title--with-icon">
+            <span className="drill-title-icon" aria-hidden="true">{sectorIcon(sector.sectorKey)}</span>
+            <span>{sector.name}</span>
+          </h2>
           <span className="drill-count">
             <span>{counts.active}건</span>
             <span className="drill-deleted-count">폐지 {counts.deleted}건</span>
           </span>
+          {relatedSectors.length > 0 && (
+            <div className="tech-list-related">
+              <span className="tech-list-related-label" aria-label="연관 분야" />
+              <span className={`dataset-tag dataset-tag--${relatedType}`}>
+                {datasetFullLabel(relatedType)}
+              </span>
+              <span className="tech-list-related-sectors">
+                {relatedSectors.map((related) => (
+                  <button
+                    key={related.key}
+                    type="button"
+                    className={`tech-list-related-sector tech-list-related-sector--${related.type}`}
+                    onClick={() => onRelatedSectorSelect(related)}
+                  >
+                    <span className="tech-list-related-icon" aria-hidden="true">{sectorIcon(related.sectorKey)}</span>
+                    <span>{related.name}</span>
+                  </button>
+                ))}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

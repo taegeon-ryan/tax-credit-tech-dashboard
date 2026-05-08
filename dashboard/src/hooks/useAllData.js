@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Papa from 'papaparse'
+import { buildCrossMatches } from '../utils/crossCategoryMap'
 
 const FILES = {
   growth_tech: '/data/newgrowth_tech.csv',
@@ -103,11 +104,14 @@ export function useAllData() {
 
   useEffect(() => {
     Promise.all(Object.values(FILES).map(loadCsv)).then(([gt, gf, st, sf]) => {
+      const growthTech = enrichTechHistory(gt)
+      const strategicTech = enrichTechHistory(st)
       setData({
-        growth_tech: enrichTechHistory(gt),
+        growth_tech: growthTech,
         growth_facility: gf,
-        strategic_tech: enrichTechHistory(st),
+        strategic_tech: strategicTech,
         strategic_facility: sf,
+        crossMatches: buildCrossMatches(growthTech, strategicTech),
       })
     })
   }, [])

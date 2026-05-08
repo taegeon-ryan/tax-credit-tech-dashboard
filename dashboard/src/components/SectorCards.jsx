@@ -76,8 +76,8 @@ export default function SectorCards({ data, filter, onSelect }) {
   const minCardWidth = useMemo(() => {
     if (filtered.length === 0) return 220
     const maxNamePx = Math.max(...filtered.map((s) => estimateNamePx(displayName(s.name))))
-    // padding(40) + 번호prefix(36) + gap(4) + name + body-gap(8) + count(52)
-    return Math.max(220, Math.ceil(maxNamePx + 140))
+    // padding + 번호prefix + 분야명 + 기술 수 영역을 넉넉하게 잡아 큰 카드에서도 줄바꿈을 줄인다.
+    return Math.max(250, Math.ceil(maxNamePx + 170))
   }, [filtered])
 
   return (

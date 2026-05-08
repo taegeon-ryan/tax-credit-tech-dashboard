@@ -15,7 +15,7 @@ function computeElapsedMonths(applyDate) {
   return (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth())
 }
 
-function historyKey(row) {
+export function historyKey(row) {
   return [
     row.sector_key,
     row.subsector || '',

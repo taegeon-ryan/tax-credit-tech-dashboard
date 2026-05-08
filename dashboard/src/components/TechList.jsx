@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 
 const AGE_FILTERS = [
   { value: 'all', label: '전체', minMonths: 0 },
@@ -49,10 +49,8 @@ function ageTag(row) {
   return { label, level: 'recent' }
 }
 
-export default function TechList({ data, sector, onBack, onSelect }) {
-  const [ageFilter, setAgeFilter] = useState('all')
-  const [includeDeleted, setIncludeDeleted] = useState(false)
-  const [sortBy, setSortBy] = useState('statute')
+export default function TechList({ data, sector, controls, onControlsChange, onBack, onSelect }) {
+  const { ageFilter, includeDeleted, sortBy } = controls
   const key = sector.type === 'growth' ? 'growth_tech' : 'strategic_tech'
   const rows = data[key]
 
@@ -160,7 +158,7 @@ export default function TechList({ data, sector, onBack, onSelect }) {
             <button
               key={f.value}
               className={`tech-filter-btn tech-filter-btn--${f.value}${ageFilter === f.value ? ' active' : ''}`}
-              onClick={() => setAgeFilter(f.value)}
+              onClick={() => onControlsChange({ ageFilter: f.value })}
             >
               {f.label}
             </button>
@@ -171,7 +169,7 @@ export default function TechList({ data, sector, onBack, onSelect }) {
           <input
             type="checkbox"
             checked={includeDeleted}
-            onChange={(e) => setIncludeDeleted(e.target.checked)}
+            onChange={(e) => onControlsChange({ includeDeleted: e.target.checked })}
           />
           <span className="deleted-toggle-box" aria-hidden="true" />
           <span>폐지 포함</span>
@@ -179,7 +177,7 @@ export default function TechList({ data, sector, onBack, onSelect }) {
 
         <label className="sort-control">
           <span>정렬</span>
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+          <select value={sortBy} onChange={(e) => onControlsChange({ sortBy: e.target.value })}>
             {SORT_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}

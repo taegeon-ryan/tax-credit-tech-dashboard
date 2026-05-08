@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useAllData } from './hooks/useAllData'
 import SectorCards from './components/SectorCards'
 import TechList from './components/TechList'
@@ -38,6 +38,12 @@ export default function App() {
   const [search, setSearch] = useState('')
 
   const isSearching = search.trim().length > 0
+
+  useEffect(() => {
+    if (selectedTech) {
+      requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }))
+    }
+  }, [selectedTech])
 
   const handleSearchSelect = (tech, type) => {
     setSelectedSector({

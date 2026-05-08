@@ -59,6 +59,10 @@ export default function App() {
     setSearch('')
   }
 
+  const handleRelatedTechSelect = (tech, type) => {
+    handleSearchSelect(tech, type)
+  }
+
   const goToCardView = (targetFilter) => {
     setView('card')
     setFilter(targetFilter)
@@ -73,6 +77,11 @@ export default function App() {
     setSelectedTech(null)
     setTechListControls(DEFAULT_TECH_LIST_CONTROLS)
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
+  }
+
+  const handleRelatedSectorSelect = (sector) => {
+    setFilter(sector.type)
+    handleSectorSelect(sector)
   }
 
   const handleSectorBack = () => {
@@ -185,6 +194,7 @@ export default function App() {
             onControlsChange={handleTechListControlsChange}
             onBack={handleSectorBack}
             onSelect={(t) => setSelectedTech(t)}
+            onRelatedSectorSelect={handleRelatedSectorSelect}
           />
         )}
 
@@ -194,6 +204,7 @@ export default function App() {
             tech={selectedTech}
             sector={selectedSector}
             onBack={() => setSelectedTech(null)}
+            onRelatedTechSelect={handleRelatedTechSelect}
           />
         )}
 

@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { sectorIcon } from '../utils/sectorIcons'
 
 const MAX_RESULTS = 100
 
@@ -74,6 +75,7 @@ export default function SearchResults({ data, query, onSelect }) {
                   <div className="search-item-desc">{highlight(r.tech_description, query)}</div>
                 )}
                 <div className="search-item-meta">
+                  <span className="search-item-sector-icon" aria-hidden="true">{sectorIcon(r.sector_key)}</span>
                   {r.sector_name}
                   {r.subsector ? ` · ${r.subsector}` : ''}
                 </div>

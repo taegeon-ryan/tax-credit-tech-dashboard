@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { diffWords } from 'diff'
 import { historyKey, normalizeSector } from '../hooks/useAllData'
+import { crossTechKey, normalizeTechName, techSimilarity } from '../utils/crossCategoryMap'
+import { sectorIcon } from '../utils/sectorIcons'
 
 function formatElapsed(months) {
   if (months == null) return ''
@@ -97,7 +99,59 @@ function facilityHistoryGroupKey(row) {
     ].join('::')
   }
 
-  return `facility::${historyKey(row)}`
+  return [
+    'facility',
+    row.sector_key,
+    normalizeSector(row.subsector || ''),
+    normalizeSector(row.tech_name || row.facility_description || ''),
+  ].join('::')
+}
+
+function dayDiff(a, b) {
+  const left = new Date(a)
+  const right = new Date(b)
+  if (Number.isNaN(left.getTime()) || Number.isNaN(right.getTime())) return null
+  return Math.round((right - left) / (1000 * 60 * 60 * 24))
+}
+
+function sameFacilityContent(a, b) {
+  return (
+    a.sector_key === b.sector_key
+    && sameNormalized(a.subsector, b.subsector)
+    && sameNormalized(a.tech_name, b.tech_name)
+    && normalizeSector(a.facility_description || '') === normalizeSector(b.facility_description || '')
+  )
+}
+
+function isAdministrativeFacilityReissue(deletedRow, addedRow) {
+  return (
+    deletedRow?.status === '삭제'
+    && addedRow?.status === '신설'
+    && String(deletedRow.version || '') === String(addedRow.version || '')
+    && dayDiff(deletedRow.apply_date, addedRow.apply_date) === 1
+    && sameFacilityContent(deletedRow, addedRow)
+  )
+}
+
+function compactFacilityHistoryRows(rows) {
+  const compacted = []
+
+  for (const row of rows) {
+    const previous = compacted[compacted.length - 1]
+
+    if (isAdministrativeFacilityReissue(previous, row)) {
+      compacted.pop()
+      const beforeDeletion = compacted[compacted.length - 1]
+      if (!beforeDeletion || !sameFacilityContent(beforeDeletion, row)) {
+        compacted.push(row)
+      }
+      continue
+    }
+
+    compacted.push(row)
+  }
+
+  return compacted
 }
 
 function buildFacilityHistoryEntries(rows) {
@@ -126,6 +180,109 @@ function buildFacilityHistoryEntries(rows) {
   })
 }
 
+function datasetLabel(type) {
+  return type === 'growth' ? '신성장' : '전략'
+}
+
+function relatedTitle(type) {
+  return type === 'strategic' ? '연관 신성장·원천기술' : '연관 국가전략기술'
+}
+
+function promotedMessage(type) {
+  if (type === 'strategic') {
+    return '이 기술은 신성장·원천기술에서 국가전략기술로 승격된 이력이 있습니다.'
+  }
+  return '이 기술은 국가전략기술로 승격된 이력이 있습니다.'
+}
+
+function relatedSectorLabel(item) {
+  if (item._type === 'growth' && item.subsector) {
+    return `${item.sector_name} · ${item.subsector}`
+  }
+  return item.sector_name
+}
+
+function similarityPercent(source, target) {
+  const ratio = typeof target._similarity === 'number'
+    ? target._similarity
+    : techSimilarity(source, target)
+  return Math.round(Math.max(0, Math.min(1, ratio)) * 100)
+}
+
+function comparableChars(text) {
+  const chars = []
+  for (let index = 0; index < text.length; index += 1) {
+    const normalized = normalizeTechName(text[index]).toLowerCase()
+    for (const char of normalized) {
+      if (/[0-9a-z가-힣]/i.test(char)) {
+        chars.push({ char, index })
+      }
+    }
+  }
+  return chars
+}
+
+function similarCharIndexes(source, target) {
+  const left = comparableChars(source)
+  const right = comparableChars(target)
+  if (left.length === 0 || right.length === 0) return new Set()
+
+  const dp = Array.from({ length: left.length + 1 }, () => new Array(right.length + 1).fill(0))
+  for (let i = 1; i <= left.length; i += 1) {
+    for (let j = 1; j <= right.length; j += 1) {
+      dp[i][j] = left[i - 1].char === right[j - 1].char
+        ? dp[i - 1][j - 1] + 1
+        : Math.max(dp[i - 1][j], dp[i][j - 1])
+    }
+  }
+
+  const indexes = new Set()
+  let i = left.length
+  let j = right.length
+  while (i > 0 && j > 0) {
+    if (left[i - 1].char === right[j - 1].char) {
+      indexes.add(right[j - 1].index)
+      i -= 1
+      j -= 1
+    } else if (dp[i - 1][j] >= dp[i][j - 1]) {
+      i -= 1
+    } else {
+      j -= 1
+    }
+  }
+
+  return indexes
+}
+
+function HighlightedSimilarity({ text, reference }) {
+  const indexes = similarCharIndexes(reference, text)
+  const parts = []
+  let buffer = ''
+  let highlighted = false
+
+  for (let index = 0; index < text.length; index += 1) {
+    const isHighlighted = indexes.has(index)
+    if (index > 0 && isHighlighted !== highlighted) {
+      parts.push({ text: buffer, highlighted })
+      buffer = ''
+    }
+    highlighted = isHighlighted
+    buffer += text[index]
+  }
+  if (buffer) parts.push({ text: buffer, highlighted })
+
+  return parts.map((part, index) => {
+    const className = part.highlighted && normalizeTechName(part.text).length >= 2
+      ? 'similarity-highlight'
+      : undefined
+    return (
+      <span key={`${part.text}-${index}`} className={className}>
+        {part.text}
+      </span>
+    )
+  })
+}
+
 function DiffDisplay({ parts, className = 'diff-text' }) {
   return (
     <p className={className}>
@@ -141,10 +298,11 @@ function DiffDisplay({ parts, className = 'diff-text' }) {
   )
 }
 
-export default function TechDetail({ data, tech, sector, onBack }) {
+export default function TechDetail({ data, tech, sector, onBack, onRelatedTechSelect }) {
   const facilityKey = sector.type === 'growth' ? 'growth_facility' : 'strategic_facility'
   const techKey = sector.type === 'growth' ? 'growth_tech' : 'strategic_tech'
   const [techHistoryOpen, setTechHistoryOpen] = useState(true)
+  const [relatedOpen, setRelatedOpen] = useState(true)
   const [facilityHistoryOpen, setFacilityHistoryOpen] = useState(true)
   const techApplyDate = tech.first_apply_date || tech.apply_date
   const techElapsedMonths = tech.introduced_elapsed_months ?? tech.elapsed_months
@@ -167,7 +325,11 @@ export default function TechDetail({ data, tech, sector, onBack }) {
     const groups = new Map()
     const facilityRows = data[facilityKey]
       .filter((row) => historyRows.some((techRow) => matchesFacility(row, techRow)))
-      .sort((a, b) => String(a.version).localeCompare(String(b.version)))
+      .sort((a, b) => {
+        const dateDiff = String(a.apply_date || '').localeCompare(String(b.apply_date || ''))
+        if (dateDiff !== 0) return dateDiff
+        return String(a.version || '').localeCompare(String(b.version || ''))
+      })
 
     for (const row of facilityRows) {
       const key = facilityHistoryGroupKey(row)
@@ -184,7 +346,7 @@ export default function TechDetail({ data, tech, sector, onBack }) {
 
     return Array.from(groups.values())
       .map((group) => {
-        const rows = trimRepeatedDeletion(group.rows)
+        const rows = trimRepeatedDeletion(compactFacilityHistoryRows(group.rows))
         const latest = rows[rows.length - 1]
         return {
           ...group,
@@ -226,13 +388,38 @@ export default function TechDetail({ data, tech, sector, onBack }) {
     }).reverse()
   }, [historyRows])
 
+  const related = useMemo(() => {
+    return data.crossMatches?.get(crossTechKey(sector.type, tech)) || null
+  }, [data.crossMatches, sector.type, tech])
+
+  const relatedItems = useMemo(() => {
+    if (!related) return []
+
+    const map = new Map()
+    for (const item of [
+      ...(related.exactMatches || []),
+      ...(related.similarMatches || []),
+      ...(related.promotedMatches || []),
+    ]) {
+      if (!map.has(item._crossKey)) map.set(item._crossKey, item)
+    }
+    return Array.from(map.values())
+  }, [related])
+
+  const relatedCount = relatedItems.length
+  const hasRelated = relatedCount > 0 || related?.promoted
+
   return (
     <div className="drill-view">
       <div className="drill-header">
-        <button className="back-btn" onClick={onBack}>← {sector.name} 기술 목록</button>
+        <button className="back-btn" onClick={onBack}>
+          <span>←</span>
+          <span className="back-btn-icon" aria-hidden="true">{sectorIcon(sector.sectorKey)}</span>
+          <span>{sector.name} 기술 목록</span>
+        </button>
         <div className="drill-title-wrap">
           <span className={`dataset-tag dataset-tag--${sector.type}`}>
-            {sector.type === 'growth' ? '신성장·원천' : '국가전략'}
+            {sector.type === 'growth' ? '신성장' : '전략'}
           </span>
           <h2 className="drill-title">{tech.tech_name}</h2>
         </div>
@@ -312,6 +499,61 @@ export default function TechDetail({ data, tech, sector, onBack }) {
                 )
               })}
             </div>
+          </div>
+        )}
+
+        {hasRelated && (
+          <div className="related-subsection">
+            <button
+              className="history-toggle"
+              type="button"
+              aria-expanded={relatedOpen}
+              onClick={() => setRelatedOpen((open) => !open)}
+            >
+              <span className={`history-chevron ${relatedOpen ? 'is-open' : ''}`}>›</span>
+              <span>{relatedTitle(sector.type)}</span>
+              <span className="detail-count">{relatedCount}건</span>
+            </button>
+
+            {relatedOpen && (
+              <div className="toggle-section-body related-section-body">
+                {related?.promoted && (
+                  <div className="promoted-note">{promotedMessage(sector.type)}</div>
+                )}
+                <div className="related-list">
+                  {relatedItems.map((item) => (
+                    <button
+                      key={item._crossKey}
+                      type="button"
+                      className={`related-item related-item--${item._type}`}
+                      onClick={() => onRelatedTechSelect(item, item._type)}
+                    >
+                      <span className={`dataset-tag dataset-tag--${item._type} related-item-tag`}>
+                        {datasetLabel(item._type)}
+                      </span>
+                      <span className="related-item-body">
+                        <span className="related-item-name-row">
+                          <span className="related-item-name">
+                            <HighlightedSimilarity text={item.tech_name} reference={tech.tech_name} />
+                          </span>
+                          <span className="similarity-badge">{similarityPercent(tech, item)}% 유사</span>
+                        </span>
+                        {item.tech_description && (
+                          <span className="related-item-desc">
+                            <HighlightedSimilarity text={item.tech_description} reference={tech.tech_description || ''} />
+                          </span>
+                        )}
+                        <span className="related-item-sector">
+                          <span className="related-sector-icon" aria-hidden="true">{sectorIcon(item.sector_key)}</span>
+                          <span>{relatedSectorLabel(item)}</span>
+                        </span>
+                      </span>
+                      <span className="related-item-arrow">›</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

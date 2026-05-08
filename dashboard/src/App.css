@@ -779,6 +779,14 @@ button { font-family: inherit; }
   padding: 14px 16px;
   border-radius: var(--radius-sm);
 }
+.detail-body-text {
+  margin-bottom: 5px;
+}
+.detail-body-meta {
+  display: block;
+  font-size: 11px;
+  color: var(--text-faint);
+}
 
 .detail-meta {
   display: flex;
@@ -820,6 +828,10 @@ button { font-family: inherit; }
   align-items: center;
 }
 
+.detail-body + .history-heading-row {
+  margin-top: 14px;
+}
+
 .history-toggle {
   display: inline-flex;
   align-items: center;
@@ -833,6 +845,27 @@ button { font-family: inherit; }
   padding: 0;
 }
 .history-toggle:hover { color: var(--text); }
+
+.toggle-section-body {
+  margin-top: 12px;
+  animation: fadeSlideIn 0.24s ease-out;
+}
+
+.facility-history {
+  margin-top: 16px;
+}
+
+.facility-history-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 14px;
+  animation: fadeSlideIn 0.24s ease-out;
+}
+
+.facility-history-group .history-timeline {
+  margin-top: 0;
+}
 
 .history-chevron {
   display: inline-flex;

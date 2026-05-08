@@ -7,6 +7,12 @@ import StatsView from './components/StatsView'
 import SearchResults from './components/SearchResults'
 import './App.css'
 
+const DEFAULT_TECH_LIST_CONTROLS = {
+  ageFilter: 'all',
+  includeDeleted: false,
+  sortBy: 'statute',
+}
+
 function DatasetToggle({ filter, onChange }) {
   return (
     <div className="dataset-toggle">
@@ -28,6 +34,7 @@ export default function App() {
   const [filter, setFilter] = useState('strategic') // 'strategic' | 'growth'
   const [selectedSector, setSelectedSector] = useState(null)
   const [selectedTech, setSelectedTech] = useState(null)
+  const [techListControls, setTechListControls] = useState(DEFAULT_TECH_LIST_CONTROLS)
   const [search, setSearch] = useState('')
 
   const isSearching = search.trim().length > 0
@@ -41,6 +48,7 @@ export default function App() {
       sectorNumber: parseInt(tech.sector_number, 10) || 999,
     })
     setSelectedTech(tech)
+    setTechListControls(DEFAULT_TECH_LIST_CONTROLS)
     setView('card')
     setSearch('')
   }
@@ -50,13 +58,25 @@ export default function App() {
     setFilter(targetFilter)
     setSelectedSector(null)
     setSelectedTech(null)
+    setTechListControls(DEFAULT_TECH_LIST_CONTROLS)
     setSearch('')
   }
 
   const handleSectorSelect = (sector) => {
     setSelectedSector(sector)
     setSelectedTech(null)
+    setTechListControls(DEFAULT_TECH_LIST_CONTROLS)
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
+  }
+
+  const handleSectorBack = () => {
+    setSelectedSector(null)
+    setSelectedTech(null)
+    setTechListControls(DEFAULT_TECH_LIST_CONTROLS)
+  }
+
+  const handleTechListControlsChange = (nextControls) => {
+    setTechListControls((current) => ({ ...current, ...nextControls }))
   }
 
   const statusCounts = useMemo(() => {
@@ -155,7 +175,9 @@ export default function App() {
           <TechList
             data={data}
             sector={selectedSector}
-            onBack={() => setSelectedSector(null)}
+            controls={techListControls}
+            onControlsChange={handleTechListControlsChange}
+            onBack={handleSectorBack}
             onSelect={(t) => setSelectedTech(t)}
           />
         )}

@@ -63,6 +63,7 @@ export default function TechList({ data, sector, onBack, onSelect }) {
 
     return rows
       .filter((r) => r.current && r.sector_key === targetSectorKey)
+      .filter((r) => !r.renumbered_deletion)
       .filter((r) => minMonths === 0 || r.introduced_elapsed_months >= minMonths)
   }, [rows, sector, ageFilter])
 
@@ -140,7 +141,7 @@ export default function TechList({ data, sector, onBack, onSelect }) {
           <h2 className="drill-title">{sector.name}</h2>
           <span className="drill-count">
             <span>{counts.active}건</span>
-            {counts.deleted > 0 && <span className="drill-deleted-count">폐지 {counts.deleted}건</span>}
+            <span className="drill-deleted-count">폐지 {counts.deleted}건</span>
           </span>
         </div>
       </div>

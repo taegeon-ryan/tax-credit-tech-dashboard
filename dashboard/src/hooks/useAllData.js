@@ -23,9 +23,24 @@ function historyKey(row) {
   ].join('::')
 }
 
+function renumberKey(row) {
+  return [
+    row.sector_key,
+    row.subsector || '',
+    row.tech_name,
+  ].join('::')
+}
+
 function enrichTechHistory(rows) {
   const firstActiveDate = new Map()
   const firstAnyDate = new Map()
+  const activeCurrentKeys = new Set()
+
+  for (const row of rows) {
+    if (row.current && row.status !== '삭제') {
+      activeCurrentKeys.add(renumberKey(row))
+    }
+  }
 
   for (const row of rows) {
     if (!row.apply_date) continue
@@ -44,6 +59,7 @@ function enrichTechHistory(rows) {
     const firstApplyDate = firstActiveDate.get(historyKey(row)) || firstAnyDate.get(historyKey(row)) || ''
     return {
       ...row,
+      renumbered_deletion: row.current && row.status === '삭제' && activeCurrentKeys.has(renumberKey(row)),
       first_apply_date: firstApplyDate,
       first_year: firstApplyDate ? firstApplyDate.slice(0, 4) : '',
       introduced_elapsed_months: computeElapsedMonths(firstApplyDate),
